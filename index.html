@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Super Search</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+          integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <style>
+        body{
+            margin: 15px 0 0 0;
+        }
+
+        h1{
+            margin-bottom: 25px;
+        }
+
+        [ng\:cloak], [ng-cloak], [data-ng-cloak], [x-ng-cloak], .ng-cloak, .x-ng-cloak{
+            display:none !important;
+        }
+
+        .glyphicon{
+            margin-right: 10px;
+        }
+
+        #channels .channel .panel-body ul{
+            padding-left: 20px;
+        }
+
+        #channels .channel .panel-heading button{
+            float: right;
+        }
+    </style>
+</head>
+<body ng-app="SuperSearch" ng-cloak>
+    <div ng-controller="main" class="container-fluid">
+        <h1>Search</h1>
+        <form ng-submit="search.submit()" name="searchForm">
+            <div class="row">
+                <div class="col-xs-12 col-sm-12 col-md-5 col-lg-5">
+                    <div class="row">
+                        <div class="col-xs-12 col-sm-12 col-md-3 col-lg-3">
+                            <select ng-model="search.channel"
+                                    ng-options="channel.name as channel.name for channel in channels.all"
+                                    ng-disabled="!channels.all.length"
+                                    ng-change="search.onChannelChange()"
+                                    class="form-control input-lg" required>
+                            </select>
+                        </div>
+
+                        <div class="col-xs-12 col-sm-12 col-md-9 col-lg-9">
+                            <div class="form-group">
+                                <div class="input-group input-group-lg">
+                                    <input ng-model="search.query" ng-disabled="!channels.all.length" id="queryInput"
+                                           type="text" class="form-control" placeholder="Search ..." required/>
+                                <span class="input-group-btn">
+                                    <button ng-disabled="searchForm.$invalid" class="btn btn-primary">
+                                        <span class="glyphicon glyphicon-search"></span> Search
+                                    </button>
+                                </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+
+        <hr/>
+
+        <h1>Channels Management</h1>
+        <div class="row">
+            <div class="col-xs-12 col-sm-12 col-md-3 col-lg-3">
+
+                <div class="panel panel-primary">
+                    <div class="panel-heading">
+            <span class="panel-title">
+                <span class="glyphicon glyphicon-plus-sign"></span> Add new channel
+            </span>
+                    </div>
+
+                    <div class="panel-body">
+                        <form name="newChannelForm">
+                            <div class="form-group">
+                                <label>Channel name</label>
+                                <input ng-model="channels.newChannel.info.name" type="text" class="form-control" required/>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Websites</label>
+                                <textarea ng-model="channels.newChannel.info.websites"
+                                          rows="5" class="form-control" required></textarea>
+                                <div class="help-block">
+                                    Each in a new line
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <button ng-click="channels.newChannel.create()"
+                                        ng-disabled="newChannelForm.$invalid" class="btn btn-primary">
+                                    <span class="glyphicon glyphicon-ok"></span> Save
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xs-12 col-sm-12 col-md-9 col-lg-9">
+                <div class="row" id="channels">
+                    <div ng-repeat="channel in channels.all" class="channel col-xs-12 col-sm-12 col-md-3 col-lg-3">
+                        <div class="panel panel-default">
+                            <div class="panel-heading">
+                                <button ng-click="channels.remove(channel)" class="btn btn-xs">
+                                    <span class="glyphicon glyphicon-remove"></span> Remove
+                                </button>
+                                <span class="panel-title">{{ channel.name }}</span>
+                            </div>
+                            <div class="panel-body">
+                                <ul>
+                                    <li ng-repeat="website in channel.websites">
+                                        {{ website }}
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="http://code.jquery.com/jquery-3.2.1.min.js"
+            integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"
+            integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.5/angular.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ngStorage/0.3.10/ngStorage.min.js"></script>
+    <script>
+        var application = angular.module('SuperSearch', ['ngStorage']);
+        application.controller('main', ['$scope', '$localStorage', function(scope, localStorage){
+            scope.$storage = localStorage;
+
+            scope.$storage = localStorage.$default({
+                'channels': []
+            });
+
+            /**
+             * Channels
+             * **/
+            scope.channels = {
+                'all': scope.$storage.channels,
+
+                'newChannel': {
+                    'info': {
+                        'name': null,
+                        'websites': []
+                    },
+
+                    'create': function(){
+                        // Add the new channel
+                        var info = angular.copy(this.info);
+                        info.websites = info.websites.split("\n");
+
+                        scope.channels.all.push(info);
+
+                        // Clear the form
+                        this.info.name = null;
+                        this.info.websites = [];
+                    }
+                },
+
+                'remove': function(channel){
+                    // Drop the passed channel off the list
+                    this.all.splice(this.all.indexOf(channel), 1);
+                },
+
+                'getChannelWebsites': function(name){
+                    var websites = [];
+                    this.all.forEach(function(channel){
+                        if(channel.name == name){
+                            websites = channel.websites;
+                        }
+                    });
+
+                    return websites.length ?websites :false;
+                }
+            };
+
+            /**
+             * Search
+             * **/
+            scope.search = {
+                'query': null,
+                'channel': null,
+
+                'onChannelChange': function(){
+                    $('#queryInput').focus();
+                },
+
+                'submit': function(){
+                    var websites = scope.channels.getChannelWebsites(this.channel);
+
+                    if(!websites.length || !this.query) return false;
+
+                    // The search query
+                    var query,
+                            querySites = [];
+
+                    websites.forEach(function(url){
+                        url = url.replace(/https?:\/\//);
+                        querySites.push('site:' + url);
+                    });
+
+                    query = this.query + ' ' + querySites.join(' OR ');
+
+                    // Open in a new tab
+                    var win = window.open('https://www.google.com.eg/search?q=' + query, '_blank');
+                    win.focus();
+                }
+            };
+        }]);
+    </script>
+</body>
+</html>
